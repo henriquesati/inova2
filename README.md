@@ -118,7 +118,7 @@ Podemos definir o ciclo do contrato público como um objeto transação composto
 *   **Foco**: Reconhecimento da dívida após a entrega do bem ou serviço.
 *   **Requisitos**: Consolidação de dados (notas fiscais, medições) e aferição técnica rigorosa.
 
-#### 🔴 Fim (Pagamento)
+#### <span style="color:#F47458">●</span> Fim (Pagamento)
 *   **Fase**: Encerramento.
 *   **Foco**: Liquidação financeira da obrigação.
 
@@ -170,6 +170,6 @@ Não fica claro como os da dos são registrados. Exemplo: todos os registros sã
 
 Quando iniciei o projeto foquei mais na validação de contratos através de fluxos exclusivitarios que vai filtrando contratos e exluindo invalidos de validações posteriores, algo como um circuitbreaker. Isso volta um pouco ao inicio dessa seção onde questionei sobre o mecanismo de registro dos dados: se passa-se por algo processual ou se seria possivel simplesmente emitir um raw sql na ponta do funil e inserir pagamentos do nada -sem referencias a entidades passadas que revelassem inconsistencias.
 
-De qualquer forma (escrevo isso enquanto desenvolvo) estou buscando modificar a implementação para ao invés de filtrar e remover de validações futuras, emitir subtrailing logs nas entidades que informem inconsistencias passadas e/ou que promovam skip em algumas validações posteriores que obviamente irão fa lhar a depender da inconsistencia. Confesso que não sei se será possivel pois -apenas pra me justificar- iniciei o teste no dia 02,  porque no momento do contato por email eu já estava participando de outros dois testes técnicos pra entregas pro dia 30/01 e 02/02
+De qualquer forma (escrevo isso enquanto desenvolvo) estou buscando modificar a implementação para ao invés de filtrar e remover de validações futuras, emitir subtrailing logs nas entidades que formem inconsistencias passadas e/ou que promovam skip em algumas validações posteriores que obviamente irão fa lhar a depender da inconsistencia. Confesso que não sei se será possivel pois -apenas pra me justificar- iniciei o teste no dia 02,  porque no momento do contato por email eu já estava participando de outros dois testes técnicos pra entregas pro dia 30/01 e 02/02
 
 Adicionalmenta ao tópico de mecanismo de inserção de dados: seria interessante saber se a inserção pode ser feita aleatoriamente em qualquer etapa do processo de criação/inserção. Assim seria possivel avaliar uma abordagem diferente de análise, algo como um tailback approach que iria validar de trás pra frente (da parte mais sensivel, onde há pagamentos de fatos) com informações do início
