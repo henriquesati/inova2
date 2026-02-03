@@ -139,6 +139,11 @@ As validações são centralizadas em contextos transacionais imutáveis (**Tran
 - `TransactionLiquidacao`
 - `PaymentTransaction`
 
+ - Dominios de validação implementados:
+- `EmpenhoDomain`
+- `ContratoDomain`
+- `PagamentoDomain`
+
 ### 4. Escopos de Teste e Validação
 
 Perguntas críticas que o sistema de validação responde para garantir a integridade dos dados:
@@ -152,3 +157,19 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 - [ ] **Coerência Cronológica**:
     - A data da NFe é compatível com a vigência do contrato?
     - Existem NFs emitidas *antes* da assinatura do contrato ou do empenho?
+
+
+insights pessoais:
+Não fica claro como os da dos são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
+
+2. Contratos podem ser performados por multiplos empenhos?
+ - Nessa modelagem eu admiti que sim, o que muda um pouco a lógica de modelagem e validação2
+ 
+3. Há diferença de regras de modelagem e regras de negócio? a mesma obrigação de pagamento pode ser concluida por multiplos pagamentos que se somam ao valor do empenho?
+
+
+Quando iniciei o projeto foquei mais na validação de contratos através de fluxos exclusivitarios que vai filtrando contratos e exluindo invalidos de validações posteriores, algo como um circuitbreaker. Isso volta um pouco ao inicio dessa seção onde questionei sobre o mecanismo de registro dos dados: se passa-se por algo processual ou se seria possivel simplesmente emitir um raw sql na ponta do funil e inserir pagamentos do nada -sem referencias a entidades passadas que revelassem inconsistencias.
+
+De qualquer forma (escrevo isso enquanto desenvolvo) estou buscando modificar a implementação para ao invés de filtrar e remover de validações futuras, emitir subtrailing logs nas entidades que informem inconsistencias passadas e/ou que promovam skip em algumas validações posteriores que obviamente irão fa lhar a depender da inconsistencia. Confesso que não sei se será possivel pois -apenas pra me justificar- iniciei o teste no dia 02,  porque no momento do contato por email eu já estava participando de outros dois testes técnicos pra entregas pro dia 30/01 e 02/02
+
+Adicionalmenta ao tópico de mecanismo de inserção de dados: seria interessante saber se a inserção pode ser feita aleatoriamente em qualquer etapa do processo de criação/inserção. Assim seria possivel avaliar uma abordagem diferente de análise, algo como um tailback approach que iria validar de trás pra frente (da parte mais sensivel, onde há pagamentos de fatos) com informações do início
