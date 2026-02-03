@@ -30,8 +30,8 @@ utilitário de linha de comando para inspecionar  o **schema** de tabelas no ban
 Scripts de feedback visual para inspecionar o output e transformações de alguns pipelines ETL em cada ciclo de vida da transação.
 
 `make view-empenhos` => Exibe transformações na etapa de empenho<br>
-`make view-liquidacao` -> Exibe linkages Empenho → Liquidação<br>
-| **Pagamento** | `make view-pagamento` | Exibe fluxo Liquidação → Pagamento |
+`make view-liquidacao` => Exibe linkages Empenho → Liquidação<br>
+`make view-pagamento` => Exibe fluxo Liquidação → Pagamento |
 
 ---
 
