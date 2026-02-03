@@ -53,23 +53,18 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 <span style="color:gray"><strong>Fornecedor (1) ──── (N) Empenho</strong></span><br>
 <span style="color:gray"><strong>Fornecedor (1) ──── (N) NFe</strong></span>
 
----
 - `contrato`  
 <span style="color:gray"><strong>Contrato (1) ──── (N) Empenho</strong></span>
 
----
 - `empenho`  
 <span style="color:gray"><strong>Empenho (1) ──── (N) LiquidacaoNotaFiscal</strong></span><br>
 <span style="color:gray"><strong>Empenho (1) ──── (N) Pagamento</strong></span>
----
 
 - `liquidacao_nota_fiscal`  
 <span style="color:gray"><strong>LiquidacaoNotaFiscal (1) ──── (1) NFe</strong></span>
----
 
 - `nfe`  
 <span style="color:gray"><strong>NFe (1) ──── (N) NFePagamento</strong></span>
----
 
 - `pagamento`  
 <span style="color:gray"><strong>Pagamento (1) ──── (N) NFePagamento</strong></span>
@@ -77,7 +72,6 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 
 - `nfe_pagamento`  
 <span style="color:gray"><strong>NFe (N) ──── (N) Pagamento</strong></span>
----
 
 ## 🧭 Relações Normativas do Domínio (Regras e Invariantes)
 - `entidade`  
