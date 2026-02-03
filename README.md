@@ -133,7 +133,7 @@ As validações são centralizadas em contextos transacionais imutáveis (**Tran
 2.  **Desacoplamento**: Evolução do domínio sem efeitos colaterais em entidades não relacionadas.
 3.  **Paradigma Funcional**: Código declarativo, legível e determinístico.
 
-**Contextos Implementados:**
+ - Contextos Implementados:
 - `TransactionEmpenho`
 - `TransactionLiquidacao`
 - `PaymentTransaction`
