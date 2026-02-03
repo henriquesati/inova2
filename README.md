@@ -128,10 +128,11 @@ Podemos definir o ciclo do contrato público como um objeto transação composto
 
 As validações são centralizadas em contextos transacionais imutáveis (**Transaction Contexts**), permitindo que cada etapa do ciclo da despesa pública tenha invariantes explícitas e auditáveis.
 
-**Benefícios:**
+ -Benefícios:
 1.  **Rastreabilidade**: Falhas são detectadas em referência ao estágio da transação.
 2.  **Desacoplamento**: Evolução do domínio sem efeitos colaterais em entidades não relacionadas.
 3.  **Paradigma Funcional**: Código declarativo, legível e determinístico.
+4.  **Dominio Declarativo**: O dominio é explicito e bem segmentado, sendo possível entender o fluxo de estados e suas respectivas regras.
 
  - Contextos Implementados:
 - `TransactionEmpenho`
