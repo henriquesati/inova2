@@ -15,7 +15,9 @@ O `sqlhelp.py` é um utilitário de linha de comando para inspecionar rapidament
 - nullable
 - defaults
 
-### Commands
+### Commands Make
+## SQL Helper 
+utilitário de linha de comando para inspecionar rapidamente a **estrutura (schema)** de tabelas no PostgreSQL.
 
 make sql+nome_da_tabela
 __Exemplo:__ make sqlnfe
@@ -81,7 +83,8 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 <span style="color:gray"><strong>Entidade (1) ──── (N) Contrato</strong></span><br>
 <span style="color:gray"><strong>Contrato (1) ──── (1) Fornecedor</strong></span><br>
 <span style="color:gray"><strong>Fornecedor (1) ──── (N) Empenho</strong></span><br>
-<span style="color:gray"><strong>Empenho (1) ──── (NFe) Empenho</strong></span><br>
+<span style="color:gray"><strong>Empenho (1) ──── (N)  liquidacao nota fiscal</strong></span><br>
+<span style="color:gray"><strong>liquidacao nota fiscal (1) ──── (1)  Nfe</strong></span><br>
 
 ### 🔴 Relações 1-to-1 Críticas (Invariantes de Domínio)
 
