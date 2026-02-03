@@ -1,0 +1,28 @@
+embora 'contracts' seja uma entidade separada no banco, acho que desasociar ela da entidade em memória transaction iria adicionar mais complexidade com pouco beneficio. 
+O acoplamento do objeto contract dentro de empenho não é muito ideal, mas como
+o e escopo dos dados e modelos estão bem fechados sem margem pra expansão, acho que os beneficios serão maiores que os maleficios
+
+
+--emps
+
+Conceitualmente:
+
+Contrato: instrumento jurídico que cria a obrigação
+
+Empenho: ato contábil que reserva dotação orçamentária para pagar essa obrigação
+
+📌 Um mesmo contrato pode gerar vários empenhos por razões legítimas.
+
+2. Situações legítimas (e comuns) de múltiplos empenhos
+2.1 Execução parcelada do contrato
+
+Exemplo:
+
+Contrato anual de manutenção
+
+Pagamentos mensais
+
+Contrato
+ ├─ Empenho Jan
+ ├─ Empenho Fev
+ ├─ Empenho Mar
