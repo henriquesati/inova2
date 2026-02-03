@@ -15,15 +15,25 @@ O `sqlhelp.py` é um utilitário de linha de comando para inspecionar rapidament
 - nullable
 - defaults
 
-### Commands Make
-## SQL Helper 
-utilitário de linha de comando para inspecionar rapidamente a **estrutura (schema)** de tabelas no PostgreSQL.
+## 🛠️ Command Line Interface (CLI)
 
-make sql+nome_da_tabela
-__Exemplo:__ make sqlnfe
+### 🔍 SQL helper
+O `sqlhelp.py` também pode ser acionado via Makefile para inspecionar tabelas rapidamente.
 
-> make sqlnfe <br>
-> make sql-contrato
+**Uso:** `make sql-[nome_da_tabela]` ou `make sql[nome_da_tabela]`
+
+
+| `make sqlnfe` => Inspeciona a estrutura da tabela `nfe` 
+| `make sql-contrato` => Inspeciona a estrutura da tabela `contrato` 
+
+### 📊 Views (ETL Output)
+Scripts de feedback visual para inspecionar o output dos pipelines ETL em cada etapa do ciclo de vida da transação.
+
+| Estágio | Comando | Descrição |
+|---------|---------|-------------|
+| **Empenho** | `make view-empenhos` | Exibe a hierarquia Contrato → Empenho |
+| **Liquidação** | `make view-liquidacao` | Exibe linkages Empenho → Liquidação |
+| **Pagamento** | `make view-pagamento` | Exibe fluxo Liquidação → Pagamento |
 
 ---
 
@@ -77,7 +87,9 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 
 - `nfe_pagamento`  
 <span style="color:gray"><strong>NFe (N) ──── (N) Pagamento</strong></span>
+
 ---
+
 ## 🧭 Relações Normativas do Domínio (Regras e Invariantes)
 - `entidade`  
 <span style="color:gray"><strong>Entidade (1) ──── (N) Contrato</strong></span><br>
@@ -89,17 +101,8 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 ### 🔴 Relações 1-to-1 Críticas (Invariantes de Domínio)
 
 <span style="color:gray"><strong>LiquidacaoNotaFiscal (1) ──── (1) NFe</strong></span>
+
 ---
-
-## 📊 Views (ETL Output)
-
-Scripts de feeback visual dos outputs relacionados as pipeline ETL em cada etapa do ciclo de vida da transação.
-
-- **Empenho** => `make view-empenhos`
-
-- **Liquidação** => `make view-liquidacao`
-
-- **Pagamento** => `make view-pagamento`
 
 ## 🧭 Abordagem
 Adoto um estilo de representação e modelagem orientado à imutabilidade de dados e transformações determinísticas de estado, inspirado em princípios de **Railway Programming**, no qual cada transição ocorre de forma explícita, previsível e validada.  
