@@ -29,9 +29,9 @@ utilitário de linha de comando para inspecionar  o **schema** de tabelas no ban
 ### 📊 Views (ETL Output)
 Scripts de feedback visual para inspecionar o output e transformações de alguns pipelines ETL em cada ciclo de vida da transação.
 
-`make view-empenhos` => Exibe transformações na etapa de empenho<br>
-`make view-liquidacao` => Exibe linkages Empenho → Liquidação<br>
-`make view-pagamento` => Exibe fluxo Liquidação → Pagamento |
+`make view-transaction-empenhos` => Exibe transformações na etapa de empenho<br>
+`make view-transaction-liquidacao` => Exibe linkages Empenho → Liquidação<br>
+`make view-transaction-pagamento` => Exibe fluxo Liquidação → Pagamento |
 
 ---
 
@@ -108,7 +108,7 @@ Dessa forma, a consistência do objeto agregado é garantida não só por suas r
 
 Podemos definir o ciclo do contrato público como um objeto transação composto por estados sequenciais: **Início, Meio e Fim**.
 
-#### 🟢 Início (TransactionEmpenho)
+#### 🔴 Início (TransactionEmpenho)
 *   **Fase**: Inicial.
 *   **Foco**: Reserva de orçamento e formalização do compromisso.
 *   **Requisitos**: Validação de documentos básicos e verificações técnicas preliminares.
@@ -118,7 +118,7 @@ Podemos definir o ciclo do contrato público como um objeto transação composto
 *   **Foco**: Reconhecimento da dívida após a entrega do bem ou serviço.
 *   **Requisitos**: Consolidação de dados (notas fiscais, medições) e aferição técnica rigorosa.
 
-#### <span style="color:#F47458">●</span> Fim (Pagamento)
+#### 🟢 Fim (Pagamento)
 *   **Fase**: Encerramento.
 *   **Foco**: Liquidação financeira da obrigação.
 
@@ -158,12 +158,13 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
     - A data da NFe é compatível com a vigência do contrato?
     - Existem NFs emitidas *antes* da assinatura do contrato ou do empenho?
 
-
+### Suposições
 insights pessoais:
 Não fica claro como os da dos são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
 
-2. Contratos podem ser performados por multiplos empenhos?
- - Nessa modelagem eu admiti que sim, o que muda um pouco a lógica de modelagem e validação2
+2. **Cardinalidade Contrato → Empenho (1:N)**
+    *   **Observação**: O banco de dados não restringe a criação de múltiplos empenhos para um mesmo contrato.
+    *   **Invariante**: A normalização ocorre via **Fornecedor**: múltiplos empenhos são permitidos, desde que todos mantenham consistência com o fornecedor titular do contrato.
  
 3. Há diferença de regras de modelagem e regras de negócio? a mesma obrigação de pagamento pode ser concluida por multiplos pagamentos que se somam ao valor do empenho?
 

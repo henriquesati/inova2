@@ -65,12 +65,12 @@ push-readme:
 	git commit -m "docs: update README" || echo "Nada para commitar no README"
 	git push origin master
 
-view-empenhos:
+view-transaction-empenhos:
 	$(PYTHON) views/etl_empenhos.py
 
-view-liquidacao:
+view-transaction-liquidacao:
 	$(PYTHON) views/etl_liquidacao.py
 
-view-pagamento:
+view-transaction-pagamento:
 	$(PYTHON) views/etl_pagamento.py
 

@@ -1,8 +1,7 @@
-
 import sys
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Dict
 from result import Result
 
 # Ensure project root is in sys.path
@@ -16,7 +15,8 @@ from models.nfe import Nfe
 from models.liquidacao_nota_fiscal import LiquidacaoNotaFiscal
 from clientside.transaction.empenho_transaction import EmpenhoTransaction
 
-##nesse modulo há duplicação do ob jeto Empenho. Pensei em alterar a estrutura de dados que armazena Empenhos em EmpenhosTransaction para um map() com o id_empenho como chave,
+##nesse modulo há duplicação do ob jeto Empenho. Pensei em alterar a estrutura de dados que armazena Empenhos em EmpenhosTransaction para um map() com o id_empenho como chave
+##acesso se tornaria 0(1) e facilitaria aces  so posterior
 # e gara ntir acesso controlado via getters para manter imutabilidade, e a partir dai armazenar List[EmpenhosLiquidados] via referencia ao ID de empenhos
 #mas não sei se vai dar tempo, então To-Do
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ class EmpenhoLiquidado:
 @dataclass
 class LiquidacaoTransaction:
     empenho_transaction: EmpenhoTransaction
-    empenhos_liquidados: List[EmpenhoLiquidado]
+    empenhos_liquidados: Dict[str, EmpenhoLiquidado]
 
     @staticmethod
     def _fetch_liquidacao_pair(empenho: Empenho) -> Result[Optional[EmpenhoLiquidado]]:
@@ -65,7 +65,7 @@ class LiquidacaoTransaction:
             return Result.err(transaction_result.error)
 
         transaction = transaction_result.value
-        empenhos_liquidados: List[EmpenhoLiquidado] = []
+        empenhos_liquidados: Dict[str, EmpenhoLiquidado] = {}
 
         for empenho in transaction.empenhos:
             # Fetch for each empenho
@@ -76,11 +76,9 @@ class LiquidacaoTransaction:
                 return Result.err(f"Error fetching liquidacao for empenho {empenho.id_empenho}: {res_pair.error}")
             
             if res_pair.value:
-                empenhos_liquidados.append(res_pair.value)
+                empenhos_liquidados[empenho.id_empenho] = res_pair.value
 
         return Result.ok(LiquidacaoTransaction(
             empenho_transaction=transaction,
             empenhos_liquidados=empenhos_liquidados
         ))
-
-

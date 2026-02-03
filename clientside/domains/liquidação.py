@@ -12,7 +12,7 @@ from result import Result
 
 # se tiver tempo melhorar execução da iteração da lista O(N*r) pra O(n)
 #è necessario uma regra que faça o aggregate do valor dos empenhos, só nao sei se faço nesse layer ou no layer de empenhos normal
-# --- Item-Level Rules (Validate a single EmpenhoLiquidado) ---
+#essa regra seria necessaria em casos de multiplos empenhos pro mesmo contrato
 
 def _rule_lfe_posterior_empenho(ctx: LiquidacaoContext, item: EmpenhoLiquidado) -> Optional[str]:
     """Valida se a Liquidação (LFE) é posterior ou igual à Data de Emissão do Empenho."""
@@ -80,8 +80,8 @@ def Valida(ctx: LiquidacaoContext) -> Result[LiquidacaoContext]:
     """
     Roda validações otimizadas: itera 1 vez sobre os itens e aplica todas as regras de item.
     """
-    # 1. Iterate over items once
-    for item in ctx.empenhos_liquidados:
+    # 1. Iterate over items once (iterate over VALUES of the dict)
+    for item in ctx.empenhos_liquidados.values():
         for rule in ITEM_RULES:
             error = rule(ctx, item)
             if error:

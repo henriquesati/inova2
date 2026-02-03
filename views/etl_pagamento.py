@@ -55,7 +55,7 @@ def run_pipeline():
             continue
 
         tx = payment_tx_res.value
-        total_pags = sum(len(x.pagamentos) for x in tx.pagamentos_efetuados)
+        total_pags = sum(len(x.pagamentos) for x in tx.pagamentos_por_empenho.values())
         
         print(f"\n   🔍 Structure Dump #{i} (Pagamentos Found: {total_pags}):")
         print_structure(tx, indent=3)
