@@ -47,7 +47,6 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 - `entidade`  
 <span style="color:gray"><strong>Entidade (1) ──── (N) Contrato</strong></span><br>
 <span style="color:gray"><strong>Entidade (1) ──── (N) Empenho</strong></span>
----
 
 - `fornecedor`  
 <span style="color:gray"><strong>Fornecedor (1) ──── (N) Contrato</strong></span><br>
