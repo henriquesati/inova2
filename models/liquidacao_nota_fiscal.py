@@ -8,10 +8,10 @@ from db_connection import get_db_connection
 @dataclass
 class LiquidacaoNotaFiscal:
     id_liquidacao_empenhonotafiscal: int
-    chave_danfe: str
+    chave_danfe: str #FK to NFE
     data_emissao: date
     valor: Decimal
-    id_empenho: str
+    id_empenho: str #FK to Empenho
 
     @staticmethod
     def _fetch_raw_fk(id_empenho: str) -> Result[tuple]:
@@ -43,7 +43,6 @@ class LiquidacaoNotaFiscal:
 
     @staticmethod
     def from_row(row: dict) -> Result["LiquidacaoNotaFiscal"]:
-        """Mapeia um dicionário para um objeto."""
         try:
             obj = LiquidacaoNotaFiscal(
                 id_liquidacao_empenhonotafiscal=int(row["id_liquidacao_empenhonotafiscal"]),
@@ -58,31 +57,8 @@ class LiquidacaoNotaFiscal:
 
     @staticmethod
     def get_by_FK_id_empenho(id_empenho: str) -> Result["LiquidacaoNotaFiscal"]:
-        """Pipeline declarativo: Fetch FK (First) -> Validate -> Map Row"""
         return (
             LiquidacaoNotaFiscal._fetch_raw_fk(id_empenho)
             .bind(LiquidacaoNotaFiscal._validate_db_return)
             .bind(LiquidacaoNotaFiscal.from_row)
         )
-
-    @staticmethod
-    def count_by_chave_danfe(chave_danfe: str) -> int:
-        """Retorna a contagem de liquidações com esta chave DANFE."""
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM liquidacao_nota_fiscal WHERE chave_danfe = %s", (chave_danfe,))
-            result = cursor.fetchone()
-            count = result[0] if result else 0
-            cursor.close()
-            conn.close()
-            return count
-        except Exception:
-            # Em caso de erro de DB, assumimos 0 ou propagamos? 
-            # Para validação, talvez devêssemos retornar Result[int], mas o user pediu assinatura simples no snippet?
-            # User snippet: `count = LiquidacaoNotaFiscal.count_by_chave_danfe(...)`
-            # Implica retorno direto de int.
-            return 0
-
-#!Design choices -  Escolhi retornar apenas o 1 resultado na busca pela FK da entidade, fazendo a validação de rompimento de 1-1 posteriormente em domains que validam 
-#objetos transaction

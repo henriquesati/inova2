@@ -4,6 +4,9 @@ from decimal import Decimal
 from result import Result
 from db_connection import get_db_connection
 
+##validações excessivas de estruruas que ja  são validadas pelo proprio banco. Agrupar validações em uma função Validate_DB_Constraints e desativar as validações, mantendo
+#implementação em código para fins visuais
+
 @dataclass
 class Nfe:
     id: int
@@ -23,7 +26,6 @@ class Nfe:
         )
 
     def _validate_chave_nfe(self) -> Result["Nfe"]:
-        # Chave NFE usually 44 chars
         if self.chave_nfe and len(self.chave_nfe) > 50:
              return Result.err(f"Nfe inválida: chave_nfe excede 50 caracteres")
         return Result.ok(self)
@@ -83,12 +85,9 @@ class Nfe:
             return Result.err(f"Erro ao instanciar Nfe: {str(e)}")
 
     @staticmethod
-    def get_by_chave_nfe(chave_nfe: str) -> Result["Nfe"]:
-        """Pipeline declarativo: Fetch (First) -> Validate -> Map"""
+    def get_by_chave_nfe_FK(chave_nfe: str) -> Result["Nfe"]:
         return (
             Nfe._fetch_raw(chave_nfe)
             .bind(Nfe._validate_db_return)
             .bind(Nfe.from_row)
         )
-#!Design choices -  Escolhi retornar apenas o 1 resultado na busca pela FK da entidade, fazendo a validação de rompimento de 1-1 posteriormente
-#na verdade, ainda preciso verificar se: existe relação 1-1 e se o rompimento compromete integridade da transação

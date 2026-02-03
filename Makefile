@@ -68,3 +68,9 @@ push-readme:
 view-empenhos:
 	$(PYTHON) views/etl_empenhos.py
 
+view-liquidacao:
+	$(PYTHON) views/etl_liquidacao.py
+
+view-pagamento:
+	$(PYTHON) views/etl_pagamento.py
+
