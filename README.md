@@ -93,55 +93,61 @@ Os objetos são tratados como estruturas imutáveis, e qualquer evolução ocorr
 
 A abordagem se baseou na estruturação de um objeto Transaction que agrupa as entidades relacionadas à execução da despesa pública persistidas no banco de dados. Esse objeto foi fatiado em três instâncias transacionais distintas, cada uma representando um estágio específico do ciclo da despesa, com recortes e adaptações que facilitam a análise e a aplicação de regras diretamente no código.
 
-Como exemplo, o objeto Contrato é incorporado ao contexto da TransactionEmpenho, representando a transação ainda na fase de empenho, na qual a obrigação orçamentária é formalizada, mas a execução financeira ainda não ocorreu.
-
-
 **TransactionEmpenho →** Iniciação do objeto e alocaçãço de recursos  
 
-**Transactionliquidation →** Instanciado a partir de TransactionEmpenho após validações e com adição de recursos pertinentes ao atual lifecycle.
+**Transactionliquidation →** Instanciado a partir de TransactionEmpenho após validações e checagems, com adição de recursos pertinentes ao atual lifecycle do objeto.
 
-**TransactionComplete →** checagem de boundaries  
+**TransactionComplete →** Instanciado a partir de TransactionLiquidation após validações e checagem de checagens, com adição de recursos pertinentes ao atual lifecycle do objeto.  
 
-Sempre que um objeto composto por dependências é instanciado — como uma Transaction que agrega múltiplas entidades — é seguro assumir que todos os objetos envolvidos já passaram por seus contratos de validação.  
+Sempre que um objeto composto por dependências é instanciado — como uma Transaction que agrega múltiplas entidades — é seguro assumir que todos os objetos envolvidos já passaram por seus contratos de validação.  (checar referencia 1)
 
 Dessa forma, a consistência do objeto agregado é garantida não só por suas regras, tanto quanto pelas regras internas e invariantes de cada componente que faz parte da agregação.
 ```bash
 
 ### 3. Ciclo de Vida do Contrato (Transaction Lifecycle)
 
-Podemos definir o ciclo de vida do contrato — expandindo o significado para além da representação em banco — como uma transação composta por estados sequenciais: **Início, Meio e Fim**.
+Podemos definir o ciclo do contrato público como um objeto transação composto por estados sequenciais: **Início, Meio e Fim**.
 
-*   **Início (TransactionEmpenho)**:
-    *   Fase inicial da transação.
-    *   **Foco**: Reserva de orçamento e formalização do compromisso.
-    *   **Requisitos**: Validação de documentos básicos e verificações técnicas preliminares.
+#### 🟢 Início (TransactionEmpenho)
+*   **Fase**: Inicial.
+*   **Foco**: Reserva de orçamento e formalização do compromisso.
+*   **Requisitos**: Validação de documentos básicos e verificações técnicas preliminares.
 
-*   **Meio (TransactionLiquidação)**:
-    *   Fase intermediária, de maior complexidade.
-    *   **Foco**: Reconhecimento da dívida após a entrega do bem ou serviço.
-    *   **Requisitos**: Consolidação de maior volume de dados (notas fiscais, medições) e alta necessidade de aferição técnica.
+#### 🟡 Meio (TransactionLiquidação)
+*   **Fase**: Intermediária (Alta Complexidade).
+*   **Foco**: Reconhecimento da dívida após a entrega do bem ou serviço.
+*   **Requisitos**: Consolidação de dados (notas fiscais, medições) e aferição técnica rigorosa.
 
-*   **Fim (Pagamento)**:
-    *   Encerramento financeiro da obrigação.
+#### 🔴 Fim (Pagamento)
+*   **Fase**: Encerramento.
+*   **Foco**: Liquidação financeira da obrigação.
 
 ---
-### Domain validation rules e invariantes
-As validações sãp centralizadas em contextos transacionais imutáveis, permitindo que cada etapa do ciclo da despesa pública tenha invariantes explícitas e auditáveis centralizadas 
-e em referencia ao estagio de vida da transação/objeto. Isso facilita a detecção de anomalias, validações faltantes, e a rastreabilidade do erro e a evolução do domínio sem acoplamento excessivo entre entidades.
-Além disso a abordagem é extremamente orientada Ao paradigma declarativo funcional, tornando o código e sua intenção mais legivle e facil de manter.
 
--TransactionLiquidacao
+### 🛡️ Domain Validation Rules & Invariants
+
+As validações são centralizadas em contextos transacionais imutáveis (**Transaction Contexts**), permitindo que cada etapa do ciclo da despesa pública tenha invariantes explícitas e auditáveis.
+
+**Benefícios:**
+1.  **Rastreabilidade**: Falhas são detectadas em referência ao estágio da transação.
+2.  **Desacoplamento**: Evolução do domínio sem efeitos colaterais em entidades não relacionadas.
+3.  **Paradigma Funcional**: Código declarativo, legível e determinístico.
+
+**Contextos Implementados:**
+- `TransactionEmpenho`
+- `TransactionLiquidacao`
+- `PaymentTransaction`
 
 ### 4. Escopos de Teste e Validação
 
-Exemplos de perguntas críticas que o sistema de validação deve responder para garantir a integridade dos dados:
+Perguntas críticas que o sistema de validação responde para garantir a integridade dos dados:
 
-**Integridade Financeira**
--   Há pagamentos registrados sem empenhos correspondentes?
--   Existem contratos cuja soma de pagamentos supera o valor total contratado?
+#### 💰 Integridade Financeira
+- [ ] Há pagamentos registrados sem empenhos correspondentes?
+- [ ] Existem contratos variando limites de valor? (Pagamentos > Contratado)
 
-**Integridade Relacional e Temporal**
--   **Violação de Propriedade (One-to-One)**: Entidades exclusivas (como uma Nota Fiscal específica) estão sendo compartilhadas incorretamente entre múltiplos contratos?
--   **Coerência Cronológica**:
-    -   A data de emissão da Nota Fiscal é compatível com a vigência do contrato?
-    -   Existem NFs criadas *antes* da assinatura do contrato ou da nota de empenho?
+#### 🔗 Integridade Relacional e Temporal
+- [ ] **Violação de Propriedade (1:1)**: Uma Nota Fiscal está sendo compartilhada incorretamente entre múltiplos contratos?
+- [ ] **Coerência Cronológica**:
+    - A data da NFe é compatível com a vigência do contrato?
+    - Existem NFs emitidas *antes* da assinatura do contrato ou do empenho?
