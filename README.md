@@ -17,21 +17,19 @@ O `sqlhelp.py` é um utilitário de linha de comando para inspecionar rapidament
 
 ## 🛠️ Command Line Interface (CLI)
 
-### 🔍 SQL helper
-O `sqlhelp.py` também pode ser acionado via Makefile para inspecionar tabelas rapidamente.
+###  SQL helper
+utilitário de linha de comando para inspecionar  o **schema** de tabelas no banco: variaveis, tipos, nullable, defaults etc.
 
 **Uso:** `make sql-[nome_da_tabela]` ou `make sql[nome_da_tabela]`
 
 
-| `make sqlnfe` => Inspeciona a estrutura da tabela `nfe` 
+| `make sqlnfe` => Inspeciona a estrutura da tabela `nfe`<br>
 | `make sql-contrato` => Inspeciona a estrutura da tabela `contrato` 
 
 ### 📊 Views (ETL Output)
-Scripts de feedback visual para inspecionar o output dos pipelines ETL em cada etapa do ciclo de vida da transação.
+Scripts de feedback visual para inspecionar o output e transformações de alguns pipelines ETL em cada ciclo de vida da transação.
 
-| Estágio | Comando | Descrição |
-|---------|---------|-------------|
-| **Empenho** | `make view-empenhos` | Exibe a hierarquia Contrato → Empenho |
+`make view-empenhos` | Exibe transformações na etapa de empenho
 | **Liquidação** | `make view-liquidacao` | Exibe linkages Empenho → Liquidação |
 | **Pagamento** | `make view-pagamento` | Exibe fluxo Liquidação → Pagamento |
 
