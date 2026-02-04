@@ -97,7 +97,7 @@ A abordagem se baseou na estruturação de um objeto Transaction que agrupa as e
 
 **Transactionliquidation →** Instanciado a partir de TransactionEmpenho após validações e checagems, com adição de recursos pertinentes ao atual lifecycle do objeto.
 
-**TransactionComplete →** Instanciado a partir de TransactionLiquidation após validações e checagem de checagens, com adição de recursos pertinentes ao atual lifecycle do objeto.  
+**TransactionComplete →** Instanciado a partir de TransactionLiquidation após validações e checagens, com adição de recursos pertinentes ao atual lifecycle do objeto.  
 
 Sempre que um objeto composto por dependências é instanciado — como uma Transaction que agrega múltiplas entidades — é seguro assumir que todos os objetos envolvidos já passaram por seus contratos de validação.  (checar referencia 1)
 
@@ -160,13 +160,17 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 
 ### Suposições
 insights pessoais:
-Não fica claro como os da dos são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
+Não fica claro como os dados são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
 
 2. **Cardinalidade Contrato → Empenho (1:N)**
     *   **Observação**: O banco de dados não restringe a criação de múltiplos empenhos para um mesmo contrato.
     *   **Invariante**: A normalização ocorre via **Fornecedor**: múltiplos empenhos são permitidos, desde que todos mantenham consistência com o fornecedor titular do contrato.
  
 3. Há diferença de regras de modelagem e regras de negócio? a mesma obrigação de pagamento pode ser concluida por multiplos pagamentos que se somam ao valor do empenho?
+ - resposta sim!
+ 
+4- Tive duvidas em relação a cardinalidade 1-1 entre Nfe e  liquidação, pois no banco de dados não há restrição de 1-1, mas sim de 1-N. 
+ - A resposta mais aceitavel que tive via IA e docs publicos é que é uma relação aceitavel ter 1-N, contanto que a soma dos valores das notas fiscais não ultrapasse o valor da liquidação.
 
 
 Quando iniciei o projeto foquei mais na validação de contratos através de fluxos exclusivitarios que vai filtrando contratos e exluindo invalidos de validações posteriores, algo como um circuitbreaker. Isso volta um pouco ao inicio dessa seção onde questionei sobre o mecanismo de registro dos dados: se passa-se por algo processual ou se seria possivel simplesmente emitir um raw sql na ponta do funil e inserir pagamentos do nada -sem referencias a entidades passadas que revelassem inconsistencias.
