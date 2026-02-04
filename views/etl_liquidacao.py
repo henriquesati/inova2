@@ -91,7 +91,7 @@ def run_pipeline():
 
     # 1. EXTRACT
     print("--- [E]XTRACT Phase ---")
-    contracts_res = E_fetch_contracts(limit=10)
+    contracts_res = E_fetch_contracts(limit=3)
     
     if contracts_res.is_err:
         print(f"❌ Extraction Failed: {contracts_res.error}")
@@ -123,7 +123,9 @@ def run_pipeline():
              continue
              
         tx = liquidacao_tx_res.value
-        total_liq = len(tx.empenhos_liquidados)
+        # Normalization step (Simulating user pipeline where checks would happen before this)
+        # Count total items in nested dict
+        total_liq = sum(len(inner) for inner in tx.itens_liquidados.values()) if isinstance(tx.itens_liquidados, dict) and tx.itens_liquidados and isinstance(next(iter(tx.itens_liquidados.values())), dict) else len(tx.itens_liquidados)
         total_emp = len(tx.empenho_transaction.empenhos)
         
         print(f"\n   🔍 Structure Dump #{i} (Empenhos: {total_emp}, Liquidados: {total_liq}):")

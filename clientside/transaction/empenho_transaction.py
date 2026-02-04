@@ -1,7 +1,7 @@
 import sys
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Dict, Optional
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../"))
@@ -22,9 +22,15 @@ def carregar_entidade(contrato: Contrato) -> Result[Entidade]:
 def carregar_fornecedor(contrato: Contrato) -> Result[Fornecedor]:
     return contrato.get_fornecedor_FK()
 
-##ficar aten to ao uso de map() aqui, porque models/empenho pode resultar falha
-def carregar_empenhos(contrato: Contrato) -> Result[List[Empenho]]:
+
+def carregar_empenhos_list(contrato: Contrato) -> Result[List[Empenho]]:
+    """Carrega lista bruta do banco"""
     return contrato.get_empenhos_FK()
+
+
+def indexar_empenhos(lista_empenhos: List[Empenho]) -> Dict[str, Empenho]:
+    """Transforma Lista de Empenhos em Dicionário indexado por ID (O(1))"""
+    return {e.id_empenho: e for e in lista_empenhos}
 
 
 # Domain Aggregate
@@ -38,7 +44,12 @@ class EmpenhoTransaction:
     entidade: Entidade
     fornecedor: Fornecedor
     contrato: Contrato
-    empenhos: List[Empenho] = field(default_factory=list)
+    # Armazenamento otimizado para O(1) Access
+    empenhos: Dict[str, Empenho] = field(default_factory=dict)
+
+    def get_empenho_by_id(self, id_empenho: str) -> Optional[Empenho]:
+        """Recupera um empenho pelo ID com complexidade O(1)."""
+        return self.empenhos.get(id_empenho)
 
     @staticmethod
     def build_from_contract(
@@ -46,6 +57,7 @@ class EmpenhoTransaction:
     ) -> Result["EmpenhoTransaction"]:
         """
         Orquestra a construção da TransactionEmpenho a partir de um Contrato válido,
+        utilizando pipeline funcional.
         """
 
         def build(contrato: Contrato) -> Result["EmpenhoTransaction"]:
@@ -54,13 +66,14 @@ class EmpenhoTransaction:
                 .bind(lambda entidade:
                     carregar_fornecedor(contrato)
                     .bind(lambda fornecedor:
-                        carregar_empenhos(contrato)
-                        .map(lambda empenhos:
+                        carregar_empenhos_list(contrato)
+                        .map(indexar_empenhos) # Converte List -> Dict
+                        .map(lambda empenhos_dict:
                             EmpenhoTransaction(
                                 entidade=entidade,
                                 fornecedor=fornecedor,
                                 contrato=contrato,
-                                empenhos=empenhos
+                                empenhos=empenhos_dict
                             )
                         )
                     )
@@ -74,5 +87,6 @@ class EmpenhoTransaction:
         assert self.contrato.id_entidade == self.entidade.id_entidade
         assert self.contrato.id_fornecedor == self.fornecedor.id_fornecedor
 
-        for emp in self.empenhos:
+        # Validar consistência de todos empenhos (iterando values do dict)
+        for emp in self.empenhos.values():
             assert emp.id_contrato == self.contrato.id_contrato

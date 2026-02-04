@@ -1,10 +1,9 @@
 import sys
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from result import Result
 
-# Ensure project root is in sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../"))
 if project_root not in sys.path:
@@ -15,48 +14,61 @@ from models.nfe import Nfe
 from models.liquidacao_nota_fiscal import LiquidacaoNotaFiscal
 from clientside.transaction.empenho_transaction import EmpenhoTransaction
 
-##nesse modulo há duplicação do ob jeto Empenho. Pensei em alterar a estrutura de dados que armazena Empenhos em EmpenhosTransaction para um map() com o id_empenho como chave
-##acesso se tornaria 0(1) e facilitaria aces  so posterior
-# e gara ntir acesso controlado via getters para manter imutabilidade, e a partir dai armazenar List[EmpenhosLiquidados] via referencia ao ID de empenhos
-#mas não sei se vai dar tempo, então To-Do
+# ESTRUTURA DE DADOS APÓS NORMALIZAÇÃO:
+# Dict[str, Dict[str, ItemLiquidacao]]
+# Onde:
+#   - Outer Key: id_empenho (Agrupa por contexto de empenho)
+#   - Inner Key: str(id_liquidacao) -> Garante unicidade dentro do grupo
+#   - Value: ItemLiquidacao(liquidacao, nfe)
+#
+# Isso facilita validações de agregados (soma de liquidacoes vs empenho)
+
+from collections import defaultdict
+
 @dataclass(frozen=True)
-class EmpenhoLiquidado:
-    empenho: Empenho
+class ItemLiquidacao:
     liquidacao: LiquidacaoNotaFiscal
-    nfe: Optional[Nfe] # NFe is optional if not found or not strictly required by hard constraint yet
+    nfe: Optional[Nfe]
+
+# TypeAlias para clareza (suporta ambos estagio Raw e Normalized)
+# Raw: List[ItemLiquidacao]
+# Normalized: Dict[id_empenho, Dict[id_liquidacao, ItemLiquidacao]]
+ItensLiquidados = Union[List[ItemLiquidacao], Dict[str, Dict[str, ItemLiquidacao]]]
 
 @dataclass
 class LiquidacaoTransaction:
     empenho_transaction: EmpenhoTransaction
-    empenhos_liquidados: Dict[str, EmpenhoLiquidado]
+    # Inicialmente Lista (Raw), depois Dict Aninhado (Normalized)
+    itens_liquidados: ItensLiquidados
 
     @staticmethod
-    def _fetch_liquidacao_pair(empenho: Empenho) -> Result[Optional[EmpenhoLiquidado]]:
+    def _fetch_liquidacoes(id_empenho: str) -> List[LiquidacaoNotaFiscal]:
+        res = LiquidacaoNotaFiscal.get_by_FK_id_empenho(id_empenho)
+        return res.value if res.is_ok else []
+
+    @staticmethod
+    def _fetch_nfe(chave_danfe: str) -> Optional[Nfe]:
+        res = Nfe.get_by_chave_nfe_FK(chave_danfe)
+        return res.value if res.is_ok else None
+
+    def normalize(self):
         """
-        Tries to fetch Liquidacao and NFe for a given Empenho.
-        If Liquidacao not found, returns Ok(None) - meaning this empenho is not liquidated yet.
+        design choices !! nessa estruturação eu prefiro armazenar id_empenho, o objetoliquidacao
+        pelo id_liquidacao (Dict[str, ItemLiquidacao]]), mas isso esconderia possiveis anomalias no banco de duplicação.
+        pra tratar isso eu provavelmente vou romper a imutabilidade de objeto no dominio, alterando o estado interno 
+        de armazenamento, ou originando uma nova estrutura no objeto!
         """
-        res_liq = LiquidacaoNotaFiscal.get_by_FK_id_empenho(empenho.id_empenho)
-        
-        if res_liq.is_err:
-             # Logic decision: Is it an error or just 'not liquidated'? 
-             # For now, let's assume it's valid to not be liquidated.
-             # But if get_by_FK returns error for "not found", we handle it.
-             # Assuming 'not found' might appear as empty or specific error. 
-             # For simplicity here: if error, we treat as not liquidated (None).
-             return Result.ok(None)
-        
-        liquidacao = res_liq.value
-        
-        # Fetch NFe
-        res_nfe = Nfe.get_by_chave_nfe_FK(liquidacao.chave_danfe)
-        nfe = res_nfe.value if res_nfe.is_ok else None
-        
-        return Result.ok(EmpenhoLiquidado(
-            empenho=empenho,
-            liquidacao=liquidacao,
-            nfe=nfe
-        ))
+        if isinstance(self.itens_liquidados, list):
+            # Dict[id_empenho, Dict[id_liq, Item]]
+            normalized: Dict[str, Dict[str, ItemLiquidacao]] = defaultdict(dict)
+            
+            for item in self.itens_liquidados:
+                id_emp = item.liquidacao.id_empenho
+                id_liq = str(item.liquidacao.id_liquidacao_empenhonotafiscal)
+                
+                normalized[id_emp][id_liq] = item
+                
+            self.itens_liquidados = dict(normalized)
 
     @staticmethod
     def build_from_empenho_transaction(transaction_result: Result[EmpenhoTransaction]) -> Result["LiquidacaoTransaction"]:
@@ -65,20 +77,20 @@ class LiquidacaoTransaction:
             return Result.err(transaction_result.error)
 
         transaction = transaction_result.value
-        empenhos_liquidados: Dict[str, EmpenhoLiquidado] = {}
+        # Inicializa como Lista para capturar tudo (incluindo possíveis duplicatas)
+        itens_liquidados: List[ItemLiquidacao] = []
 
-        for empenho in transaction.empenhos:
-            # Fetch for each empenho
-            res_pair = LiquidacaoTransaction._fetch_liquidacao_pair(empenho)
-            if res_pair.is_err:
-                # Decide if we block the whole transaction or just skip.
-                # Let's return error to be safe/strict for now.
-                return Result.err(f"Error fetching liquidacao for empenho {empenho.id_empenho}: {res_pair.error}")
+        for empenho in transaction.empenhos.values():
+            # 1. Busca todas liquidações do empenho
+            liquidacoes = LiquidacaoTransaction._fetch_liquidacoes(empenho.id_empenho)
             
-            if res_pair.value:
-                empenhos_liquidados[empenho.id_empenho] = res_pair.value
+            # 2. Para cada liquidação, busca o contexto (NFe) e registra
+            for liq in liquidacoes:
+                nfe = LiquidacaoTransaction._fetch_nfe(liq.chave_danfe)
+                item = ItemLiquidacao(liquidacao=liq, nfe=nfe)
+                itens_liquidados.append(item)
 
         return Result.ok(LiquidacaoTransaction(
             empenho_transaction=transaction,
-            empenhos_liquidados=empenhos_liquidados
+            itens_liquidados=itens_liquidados
         ))

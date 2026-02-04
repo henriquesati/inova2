@@ -21,7 +21,7 @@ def run_pipeline():
 
     # 1. EXTRACT
     print("--- [E]XTRACT Phase ---")
-    contracts_res = E_fetch_contracts(limit=10)
+    contracts_res = E_fetch_contracts(limit=3)
     
     if contracts_res.is_err:
         print(f"❌ Extraction Failed: {contracts_res.error}")
@@ -49,6 +49,7 @@ def run_pipeline():
              continue
         
         # Step 3: Pagamento
+        liquidacao_tx_res.value.normalize()
         payment_tx_res = PaymentTransaction.build_from_liquidacao_transaction(liquidacao_tx_res)
         if payment_tx_res.is_err:
             print(f"   ⚠️ Payment Tx Failed: {payment_tx_res.error}")

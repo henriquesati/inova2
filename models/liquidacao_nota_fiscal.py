@@ -14,17 +14,17 @@ class LiquidacaoNotaFiscal:
     id_empenho: str #FK to Empenho
 
     @staticmethod
-    def _fetch_raw_fk(id_empenho: str) -> Result[tuple]:
-        """Busca dados crus no banco filtrando por FK e retorna (row, description). Retorna apenas o primeiro."""
+    def _fetch_raw_fk(id_empenho: str) -> Result[List[tuple]]:
+        """Busca dados crus no banco filtrando por FK e retorna lista de (row, description)."""
         conn = None
         cursor = None
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM liquidacao_nota_fiscal WHERE id_empenho = %s LIMIT 1", (id_empenho,))
-            row = cursor.fetchone()
+            cursor.execute("SELECT * FROM liquidacao_nota_fiscal WHERE id_empenho = %s", (id_empenho,))
+            rows = cursor.fetchall()
             description = cursor.description
-            return Result.ok((row, description))
+            return Result.ok([(row, description) for row in rows])
         except Exception as e:
             return Result.err(f"Erro de conexão/consulta: {str(e)}")
         finally:
@@ -32,14 +32,14 @@ class LiquidacaoNotaFiscal:
             if conn: conn.close()
 
     @staticmethod
-    def _validate_db_return(data: tuple) -> Result[dict]:
-        """Valida o retorno do banco. Se row é None, retorna erro."""
-        row, description = data
-        if row is None:
-             return Result.err("LiquidacaoNotaFiscal não encontrada para este empenho.")
-        
-        columns = [desc[0] for desc in description]
-        return Result.ok(dict(zip(columns, row)))
+    def _validate_db_return(data_list: List[tuple]) -> Result[List[dict]]:
+        """Valida e processa lista de retornos do banco."""
+        processed_data = []
+        for row, description in data_list:
+            if row:
+                columns = [desc[0] for desc in description]
+                processed_data.append(dict(zip(columns, row)))
+        return Result.ok(processed_data)
 
     @staticmethod
     def from_row(row: dict) -> Result["LiquidacaoNotaFiscal"]:
@@ -56,9 +56,19 @@ class LiquidacaoNotaFiscal:
             return Result.err(f"Erro ao instanciar LiquidacaoNotaFiscal: {str(e)}")
 
     @staticmethod
-    def get_by_FK_id_empenho(id_empenho: str) -> Result["LiquidacaoNotaFiscal"]:
-        return (
-            LiquidacaoNotaFiscal._fetch_raw_fk(id_empenho)
-            .bind(LiquidacaoNotaFiscal._validate_db_return)
-            .bind(LiquidacaoNotaFiscal.from_row)
-        )
+    def get_by_FK_id_empenho(id_empenho: str) -> Result[List["LiquidacaoNotaFiscal"]]:
+        """Fetch all Liquidacoes for an Empenho."""
+        raw_res = LiquidacaoNotaFiscal._fetch_raw_fk(id_empenho)
+        if raw_res.is_err:
+             return Result.err(raw_res.error)
+        
+        dict_res = LiquidacaoNotaFiscal._validate_db_return(raw_res.value)
+        if dict_res.is_err:
+             return Result.err(dict_res.error)
+             
+        liquidacoes = []
+        for row in dict_res.value:
+            obj_res = LiquidacaoNotaFiscal.from_row(row)
+            if obj_res.is_ok:
+                liquidacoes.append(obj_res.value)
+        return Result.ok(liquidacoes)
