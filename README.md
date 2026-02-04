@@ -31,7 +31,9 @@ Scripts de feedback visual para inspecionar o output e transformações de algun
 
 `make view-transaction-empenhos` => Exibe transformações na etapa de empenho<br>
 `make view-transaction-liquidacao` => Exibe linkages Empenho → Liquidação<br>
-`make view-transaction-pagamento` => Exibe fluxo Liquidação → Pagamento |
+`make view-transaction-pagamento` => Exibe fluxo Liquidação → Pagamento<br>
+`make fullpipe` => Pipeline completo: processa TODOS os contratos em batches de 100, logando estrutura completa<br>
+`make fullpipedebug` => Pipeline debug com logs detalhados e delay configurável
 
 ---
 
@@ -129,10 +131,10 @@ Podemos definir o ciclo do contrato público como um objeto transação composto
 As validações são centralizadas em contextos transacionais imutáveis (**Transaction Contexts**), permitindo que cada etapa do ciclo da despesa pública tenha invariantes explícitas e auditáveis.
 
  -Benefícios:
-1.  **Rastreabilidade**: Falhas são detectadas em referência ao estágio da transação.
-2.  **Desacoplamento**: Evolução do domínio sem efeitos colaterais em entidades não relacionadas.
-3.  **Paradigma Funcional**: Código declarativo, legível e determinístico.
-4.  **Dominio Declarativo**: O dominio é explicito e bem segmentado, sendo possível entender o fluxo de estados e suas respectivas regras.
+1.  Rastreabilidade Falhas são detectadas em referência ao estágio da transação.
+2.  Desacoplamento Evolução do domínio sem efeitos colaterais em entidades não relacionadas.
+3.  Paradigma Funcional Código declarativo, legível e determinístico.
+4.  Dominio Declarativo O dominio é explicito e bem segmentado, sendo possível entender o fluxo de estados e suas respectivas regras.
 
  - Contextos Implementados:
 - `TransactionEmpenho`
@@ -143,6 +145,12 @@ As validações são centralizadas em contextos transacionais imutáveis (**Tran
 - `EmpenhoDomain`
 - `ContratoDomain`
 - `PagamentoDomain`
+
+ - SubDOmain de validação implementados:
+  - FinancialUtiliy
+  - nfeInegrity
+-> Subdominios são usados para agrupar regras de negocio relacionadas. E facilitar organização e reutilização somente
+não tive tempo de refatorar os dominios em subdominiosn adequadamente
 
 ### 4. Escopos de Teste e Validação
 
@@ -161,6 +169,8 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 ### Suposições
 insights pessoais:
 Não fica claro como os dados são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
+1. Contratos podem ser performados por muitos empenhos?
+ - Sim!
 
 2. **Cardinalidade Contrato → Empenho (1:N)**
     *   **Observação**: O banco de dados não restringe a criação de múltiplos empenhos para um mesmo contrato.
@@ -168,7 +178,7 @@ Não fica claro como os dados são registrados. Exemplo: todos os registros são
  
 3. Há diferença de regras de modelagem e regras de negócio? a mesma obrigação de pagamento pode ser concluida por multiplos pagamentos que se somam ao valor do empenho?
  - resposta sim!
- 
+
 4- Tive duvidas em relação a cardinalidade 1-1 entre Nfe e  liquidação, pois no banco de dados não há restrição de 1-1, mas sim de 1-N. 
  - A resposta mais aceitavel que tive via IA e docs publicos é que é uma relação aceitavel ter 1-N, contanto que a soma dos valores das notas fiscais não ultrapasse o valor da liquidação.
 
