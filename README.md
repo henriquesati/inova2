@@ -86,24 +86,13 @@ relações apresentadas de geral e não relacionadas a invariantes de negócio.
 - `nfe`  
 <span style="color:gray"><strong>NFe (1) ──── (N) NFePagamento</strong></span>
 
-- `pagamento`  
-<span style="color:gray"><strong>Pagamento (1) ──── (N) NFePagamento</strong></span>
----
-
-- `nfe_pagamento`  
-<span style="color:gray"><strong>NFe (N) ──── (N) Pagamento</strong></span>
-
 ## 🧭 Relações Normativas do Domínio (Regras e Invariantes)
 - `entidade`  
 <span style="color:gray"><strong>Entidade (1) ──── (N) Contrato</strong></span><br>
 <span style="color:gray"><strong>Contrato (1) ──── (1) Fornecedor</strong></span><br>
 <span style="color:gray"><strong>Fornecedor (1) ──── (N) Empenho</strong></span><br>
 <span style="color:gray"><strong>Empenho (1) ──── (N)  liquidacao nota fiscal</strong></span><br>
-<span style="color:gray"><strong>liquidacao nota fiscal (1) ──── (1)  Nfe</strong></span><br>
-
-### 🔴 Relações 1-to-1 Críticas (Invariantes de Domínio)
-
-<span style="color:gray"><strong>LiquidacaoNotaFiscal (1) ──── (1) NFe</strong></span>
+<span style="color:gray"><strong>liquidacao nota fiscal (N) ──── (1)  Nfe</strong></span><br>
 
 ---
 
