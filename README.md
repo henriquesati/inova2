@@ -105,6 +105,7 @@ Sempre que um objeto composto por dependências é instanciado — como uma Tran
 
 Dessa forma, a consistência do objeto agregado é garantida não só por suas regras, tanto quanto pelas regras internas e invariantes de cada componente que faz parte da agregação.
 
+```bash
 ### 3. Ciclo de Vida do Contrato (Transaction Lifecycle)
 
 Podemos definir o ciclo do contrato público como um objeto transação composto por estados sequenciais: **Início, Meio e Fim**.
@@ -242,6 +243,7 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 | `check_pagamento_date_not_future` | Data Pagamento ≤ Hoje | Temporal |
 | `check_pagamento_date_after_contrato` | Data Pagamento ≥ Data Contrato | Temporal |
 | `check_pagamento_date_after_empenho` | Data Pagamento ≥ min(Data Empenho) | Temporal |
+```
 
 # Suposições
 insights pessoais:
