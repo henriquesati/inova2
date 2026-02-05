@@ -39,7 +39,9 @@ Scripts de feedback visual para inspecionar o output e transformações de algun
 `make view-transaction-liquidacao` => Exibe linkages Empenho → Liquidação<br>
 `make view-transaction-pagamento` => Exibe fluxo Liquidação → Pagamento<br>
 `make fullpipe` => Pipeline completo: processa TODOS os contratos em batches de 100, logando estrutura completa<br>
-`make fullpipedebug` => Pipeline debug com logs detalhados e delay configurável
+`make fullpipe-structure` => Dump da estrutura de objetos em memória (debugging profundo)<br>
+`make fullpipedebug` => Pipeline debug com logs detalhados e delay configurável<br>
+`make dataview` => Dashboard interativo com Plotly e Streamlit
 
 ---
 
