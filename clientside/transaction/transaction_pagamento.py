@@ -1,5 +1,17 @@
+"""
+PaymentTransaction - Estágio final do lifecycle de despesa pública.
+
+Este módulo implementa o agregado imutável que representa pagamentos,
+vinculados contextualmente à fase de liquidação/empenho.
+
+Design:
+- Aggregate imutável (frozen dataclass)
+- Fetch e construção de dados
+- Validação delegada ao domain layer (domains/pagamento.py)
+"""
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
+from typing import List, Dict, Tuple
+from decimal import Decimal
 import sys
 import os
 
@@ -11,84 +23,115 @@ if project_root not in sys.path:
 from result import Result
 from models.pagamento import Pagamento
 from models.nfe_pagamento import NfePagamento
-from models.empenho import Empenho
 from clientside.transaction.transaction_liquidacao import LiquidacaoTransaction, ItemLiquidacao
 
+
+
+
 @dataclass(frozen=True)
-class PagamentoEfetuado:
-    empenho: Empenho
-    itens: List[ItemLiquidacao]
-    pagamentos: List[Pagamento]
-    nfe_pagamentos: List[NfePagamento]
+class PagamentoItem:
+    """
+    Representação imutável de um item de pagamento.
+    """
+    id_pagamento: str
+    pagamento: Pagamento
+    nfe_pagamentos: Tuple[NfePagamento, ...]
 
-@dataclass
+
+@dataclass(frozen=True)
 class PaymentTransaction:
+    """
+    Aggregate Final Imutável.
+    Contém a fonte da verdade (LiquidacaoTransaction) e os Pagamentos processados.
+    
+    Nota: Pagamentos são agrupados por EMPENHO, pois o modelo de dados
+    não possui vínculo direto Pagamento -> Liquidação.
+    """
     liquidacao_transaction: LiquidacaoTransaction
-    pagamentos_por_empenho: Dict[str, PagamentoEfetuado]
+    
+    # Dict[id_empenho, Tuple[PagamentoItem, ...]]
+    pagamentos_por_empenho: Dict[str, Tuple[PagamentoItem, ...]]
+
 
     @staticmethod
-    def _get_pagamentos_empenho(id_empenho: str) -> List[Pagamento]:
-        res = Pagamento.get_by_FK_id_empenho(id_empenho)
-        return res.value if res.is_ok else []
-
-    @staticmethod
-    def _get_pagamentos_nfe(chave_nfe: Optional[str]) -> List[NfePagamento]:
-        if not chave_nfe:
+    def _fetch_pagamentos_and_nfe(id_empenho: str) -> List[PagamentoItem]:
+        """Fetch & Compose: Pagamento + NfePagamentos -> PagamentoItem"""
+        res_pags = Pagamento.get_by_FK_id_empenho(id_empenho)
+        if res_pags.is_err: 
             return []
-        res = NfePagamento.get_by_FK_chave_nfe(chave_nfe)
-        return res.value if res.is_ok else []
-
-    @staticmethod
-    def _fetch_pagamento_context(empenho: Empenho, itens: List[ItemLiquidacao]) -> Result[PagamentoEfetuado]:
-        """
-        Aggregates financial records for a given empenho context (aggregated from liquidations).
-        """
-        # 1. Fetch Pagamentos (linked to Empenho)
-        pagamentos = PaymentTransaction._get_pagamentos_empenho(empenho.id_empenho)
         
-        # 2. Fetch NfePagamentos (linked to NFe from all liquidations)
-        all_nfe_pagamentos: List[NfePagamento] = []
-        for item in itens:
-            chave_nfe = item.nfe.chave_nfe if item.nfe else None
-            nfe_pags = PaymentTransaction._get_pagamentos_nfe(chave_nfe)
-            all_nfe_pagamentos.extend(nfe_pags)
-                
-        return Result.ok(PagamentoEfetuado(
-            empenho=empenho,
-            itens=itens,
-            pagamentos=pagamentos,
-            nfe_pagamentos=all_nfe_pagamentos
-        ))
+        items = []
+        for pag in res_pags.value:
+            items.append(PagamentoItem(
+                id_pagamento=pag.id_pagamento,
+                pagamento=pag,
+                nfe_pagamentos=() 
+            ))
+        return items
 
     @staticmethod
-    def build_from_liquidacao_transaction(tx_result: Result[LiquidacaoTransaction]) -> Result["PaymentTransaction"]:
-        if tx_result.is_err:
+    def build_from_liquidacao_transaction(
+        tx_result: Result[LiquidacaoTransaction]
+    ) -> Result["PaymentTransaction"]:
+        """
+        Pipeline funcional para construir PaymentTransaction.
+        
+        Fluxo:
+        1. Recebe LiquidacaoTransaction validada
+        2. Fetch pagamentos por empenho
+        """
+        if tx_result.is_err: 
             return Result.err(tx_result.error)
-
-        transaction = tx_result.value
-        pagamentos_por_empenho: Dict[str, PagamentoEfetuado] = {}
-
-        # 1. Map Empenhos (Already a Dict)
-        empenho_map = transaction.empenho_transaction.empenhos
         
-        # 2. Iterate pre-grouped liquidations
-        # Structure: Dict[id_empenho, Dict[id_liq, Item]]
-        for id_empenho, inner_dict in transaction.itens_liquidados.items():
+        liq_tx = tx_result.value
+        
+        pagamentos_map: Dict[str, Tuple[PagamentoItem, ...]] = {}
+        
+        all_empenho_ids = liq_tx.itens_liquidados.keys()
+        
+        for id_emp in all_empenho_ids:
+            items = PaymentTransaction._fetch_pagamentos_and_nfe(id_emp)
+            if items:
+                pagamentos_map[id_emp] = tuple(items)
             
-            empenho = empenho_map.get(id_empenho)
-            if not empenho:
-                 return Result.err(f"Empenho {id_empenho} found in liquidations but not in transaction empenhos list.")
-            
-            # List of items for this empenho
-            itens = list(inner_dict.values())
-            
-            res = PaymentTransaction._fetch_pagamento_context(empenho, itens)
-            if res.is_ok:
-                pagamentos_por_empenho[id_empenho] = res.value
-            else:
-                 return Result.err(f"Error fetching payments for empenho {id_empenho}: {res.error}")
 
         return Result.ok(PaymentTransaction(
-            liquidacao_transaction=transaction,
-            pagamentos_por_empenho=pagamentos_por_empenho
+            liquidacao_transaction=liq_tx,
+            pagamentos_por_empenho=pagamentos_map
         ))
+
+    @staticmethod
+    def build_from_batch(
+        liquidacao_transaction: LiquidacaoTransaction,
+        pagamentos_por_empenho: Dict[str, List[Pagamento]]
+    ) -> Result["PaymentTransaction"]:
+        """
+        Batch builder: cria PaymentTransaction a partir de dados pré-carregados.
+        Elimina N+1 queries.
+        
+        Args:
+            liquidacao_transaction: LiquidacaoTransaction validada
+            pagamentos_por_empenho: Dict[id_empenho -> List[Pagamento]]
+        """
+        pagamentos_map: Dict[str, Tuple[PagamentoItem, ...]] = {}
+        
+        all_empenho_ids = liquidacao_transaction.itens_liquidados.keys()
+        
+        for id_emp in all_empenho_ids:
+            pagamentos = pagamentos_por_empenho.get(id_emp, [])
+            if pagamentos:
+                items = [
+                    PagamentoItem(
+                        id_pagamento=pag.id_pagamento,
+                        pagamento=pag,
+                        nfe_pagamentos=()
+                    )
+                    for pag in pagamentos
+                ]
+                pagamentos_map[id_emp] = tuple(items)
+
+        return Result.ok(PaymentTransaction(
+            liquidacao_transaction=liquidacao_transaction,
+            pagamentos_por_empenho=pagamentos_map
+        ))
+

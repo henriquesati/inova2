@@ -74,3 +74,17 @@ view-transaction-liquidacao:
 view-transaction-pagamento:
 	$(PYTHON) views/etl_pagamento.py
 
+view-fullpipe:
+	$(PYTHON) views/etl_fullpipe.py
+
+# Pipeline completo - processa TODOS os contratos em batches de 100
+fullpipe:
+	$(PYTHON) views/etl_fullpipe.py -b 100
+
+# Rodar o dashboard de visualização (Streamlit + Plotly)
+dataview:
+	./.venv/bin/streamlit run views/dataview.py
+
+fullpipe-structure:
+	$(PYTHON) views/etl_structure_dump.py
+

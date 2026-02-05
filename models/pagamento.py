@@ -32,7 +32,7 @@ class Pagamento:
             return Result.ok(Pagamento(
                 id_pagamento=str(row["id_pagamento"]),
                 id_empenho=str(row["id_empenho"]),
-                data_pagamento_emp=row["data_pagamento_emp"],
+                data_pagamento_emp=row["datapagamentoempenho"],  # DB column name
                 valor=row["valor"]
             ))
         except Exception as e:

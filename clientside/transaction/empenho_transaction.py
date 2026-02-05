@@ -14,7 +14,7 @@ from models.contrato import Contrato
 from models.empenho import Empenho
 from result import Result
 
-
+#se houver tempo aprimorar failfast validations pra validar contratos com invalidações mais estritas mais rapidos
 def carregar_entidade(contrato: Contrato) -> Result[Entidade]:
     return contrato.get_entidade_FK()
 
@@ -90,3 +90,55 @@ class EmpenhoTransaction:
         # Validar consistência de todos empenhos (iterando values do dict)
         for emp in self.empenhos.values():
             assert emp.id_contrato == self.contrato.id_contrato
+
+    @staticmethod
+    def build_from_batch(
+        contratos: List[Contrato],
+        entidades_map: Dict[int, Entidade],
+        fornecedores_map: Dict[int, Fornecedor],
+        empenhos_por_contrato: Dict[int, List[Empenho]]
+    ) -> List[Result["EmpenhoTransaction"]]:
+        """
+        Batch builder: cria múltiplas EmpenhoTransactions a partir de dados pré-carregados.
+        Elimina N+1 queries - todos os dados já vêm em memória.
+        
+        Args:
+            contratos: Lista de Contratos
+            entidades_map: Dict[id_entidade -> Entidade]
+            fornecedores_map: Dict[id_fornecedor -> Fornecedor]
+            empenhos_por_contrato: Dict[id_contrato -> List[Empenho]]
+        
+        Returns:
+            Lista de Result[EmpenhoTransaction], um para cada contrato
+        """
+        results: List[Result["EmpenhoTransaction"]] = []
+        
+        for contrato in contratos:
+            # Buscar entidade
+            entidade = entidades_map.get(contrato.id_entidade)
+            if not entidade:
+                results.append(Result.err(f"Entidade {contrato.id_entidade} não encontrada"))
+                continue
+            
+            # Buscar fornecedor
+            fornecedor = fornecedores_map.get(contrato.id_fornecedor)
+            if not fornecedor:
+                results.append(Result.err(f"Fornecedor {contrato.id_fornecedor} não encontrado"))
+                continue
+            
+            # Buscar empenhos do contrato
+            empenhos_list = empenhos_por_contrato.get(contrato.id_contrato, [])
+            empenhos_dict = {e.id_empenho: e for e in empenhos_list}
+            
+            try:
+                tx = EmpenhoTransaction(
+                    entidade=entidade,
+                    fornecedor=fornecedor,
+                    contrato=contrato,
+                    empenhos=empenhos_dict
+                )
+                results.append(Result.ok(tx))
+            except AssertionError as e:
+                results.append(Result.err(f"Invariante violada: {e}"))
+        
+        return results
