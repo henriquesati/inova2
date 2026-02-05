@@ -149,9 +149,10 @@ As validações são centralizadas em contextos transacionais imutáveis (Transa
  - SubDOmain de validação implementados:
   - FinancialUtiliy
   - nfeInegrity
--> Subdominios são usados para agrupar regras de negocio relacionadas. E facilitar organização e reutilização somente
-exemplo: muitos domains fazem sucessivas validações de data. Para evitar repetição de funções iguais: declarar em um subdomain de reutilização e compartilhar entre mṕidulos
-não tive tempo de refatorar os dominios em subdominiosn adequadamente
+
+-> Subdominios são usados para agrupar regras de negocio relacionadas e facilitar organização e reutilização somente
+   exemplo: muitos domains fazem sucessivas validações de data. Para evitar repetição de funções iguais: declarar funçõs de data em um subdomain de reutilização e compartilhar entre mṕidulos
+   não tive tempo de refatorar os dominios em subdominiosn adequadamente
 
 ### 4. Escopos de Teste e Validação
 
@@ -167,7 +168,6 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
     - A data da NFe é compatível com a vigência do contrato?
     - Existem NFs emitidas *antes* da assinatura do contrato ou do empenho?
 
----
 
 ### 5. Validações por Fase do Ciclo de Vida
 
