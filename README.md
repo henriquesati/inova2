@@ -261,6 +261,7 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 | `check_pagamento_date_not_future` | Data Pagamento ≤ Hoje | Temporal |
 | `check_pagamento_date_after_contrato` | Data Pagamento ≥ Data Contrato | Temporal |
 | `check_pagamento_date_after_empenho` | Data Pagamento ≥ min(Data Empenho) | Temporal |
+O municipio do pagamento é o mesmo muninicpio da entidade dona do contrato?
 ```
 
 # Suposições
