@@ -132,8 +132,11 @@ Podemos definir o ciclo do contrato público como um objeto transação composto
 *   **Foco**: Liquidação financeira da obrigação.
 
 ---
+```
 
 ### 🛡️ Domain Validation Rules & Invariants
+
+```bash
 
 As validações são centralizadas em contextos transacionais imutáveis (Transaction Contexts), permitindo que cada etapa do ciclo da despesa pública tenha invariantes explícitas e auditáveis.
 
@@ -161,7 +164,11 @@ As validações são centralizadas em contextos transacionais imutáveis (Transa
    exemplo: muitos domains fazem sucessivas validações de data. Para evitar repetição de funções iguais: declarar funçõs de data em um subdomain de reutilização e compartilhar entre mṕidulos
    não tive tempo de refatorar os dominios em subdominiosn adequadamente
 
+```
+
 ### 4. Escopos de Teste e Validação
+
+```bash
 
 Perguntas críticas que o sistema de validação responde para garantir a integridade dos dados:
 
@@ -176,7 +183,11 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
     - Existem NFs emitidas *antes* da assinatura do contrato ou do empenho?
 
 
+```
+
 ### 5. Validações por Fase do Ciclo de Vida
+
+```bash
 
 #### 🔴 Fase Empenho (TransactionEmpenho)
 
