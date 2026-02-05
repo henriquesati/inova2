@@ -2,6 +2,12 @@
 
 Ferramentas e utilitários para apoiar o desenvolvimento do projeto **Inova**.
 
+## 🚀 Instalação
+
+```bash
+pip install -r requirements.txt
+```
+
 Este repositório contém scripts voltados para inspeção rápida do banco e validações auxiliares.
 
 ---
