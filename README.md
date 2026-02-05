@@ -275,11 +275,15 @@ Não fica claro como os dados são registrados. Exemplo: todos os registros são
     *   **Invariante**: A normalização ocorre via **Fornecedor**: múltiplos empenhos são permitidos, desde que todos mantenham consistência com o fornecedor titular do contrato.
  
 3. Há diferença de regras de modelagem e regras de negócio? a mesma obrigação de pagamento pode ser concluida por multiplos pagamentos que se somam ao valor do empenho?
- - resposta sim! há diferemça de regras de modelagem do banco e regras de negocio (só nao lem bro uma agora.. to-do acrescentar uma aqui!)
+ - resposta sim! há diferença de regras de modelagem do banco e regras de negocio (só nao lem bro uma agora.. to-do acrescentar uma aqui!)
 
 4- Tive duvidas em relação a cardinalidade 1-1 entre Nfe e  liquidação, pois no banco de dados não há restrição de 1-1, podendo ser 1-n
  - A resposta mais aceitavel que tive via IA e docs publicos é que é uma relação aceitavel ter 1-N, contanto que a soma dos valores das notas fiscais não ultrapasse o valor da liquidação.
  - : Em compras públicas é comum o fatiamento de pagamentos — uma única NFe pode ser liquidada parcialmente em etapas, especialmente em contratos de fornecimento contínuo, entregas parceladas etc
+
+5. **Liquidação de NFe Pagamentos também pode ser fatiada em múltiplos pagamentos?**
+ - **Sim!** Assim como uma NFe pode ser liquidada em partes, uma liquidação (obrigação de pagamento reconhecida) pode ser paga em múltiplas parcelas.
+ - **Validação**: O sistema valida se a **Soma(Pagamentos) ≤ Soma(Liquidações)** por Empenho, permitindo flexibilidade de N pagamentos para M liquidações, desde que o teto financeiro seja respeitado.
 
 Quando iniciei o projeto foquei mais na validação de contratos através de fluxos exclusivitarios que vai filtrando contratos e exluindo invalidos de validações posteriores, algo como um circuitbreaker. Isso volta um pouco ao inicio dessa seção onde questionei sobre o mecanismo de registro dos dados: se passa-se por algo processual ou se seria possivel simplesmente emitir um raw sql na ponta do funil e inserir pagamentos do nada -sem referencias a entidades passadas que revelassem inconsistencias.
 -- resposta  esse questionamento. Sim, é possivel incluir validações não sequenciais, fazendo consultas estratégicas que possam revelar contratos invalidos em um approach from the tail: puxando
