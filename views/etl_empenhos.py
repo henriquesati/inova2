@@ -1,11 +1,12 @@
 
 import sys
 import os
+import argparse
 from typing import List
 
 # Ensure project root is in sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
+project_root = os.path.abspath(os.path.join(current_dir, "../"))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
@@ -14,45 +15,7 @@ from result import Result
 from models.contrato import Contrato
 from clientside.transaction.empenho_transaction import EmpenhoTransaction
 from clientside.domains.empenho import executar_empenho_rules
-
-def E_fetch_contracts(limit: int = 5) -> Result[List[Contrato]]:
-    """
-    [E]XTRACT: Fetches contracts from the database.
-    """
-    conn = None
-    cursor = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        query = "SELECT * FROM contrato LIMIT %s"
-        cursor.execute(query, (limit,))
-        
-        columns = [desc[0] for desc in cursor.description]
-        contracts = []
-        for row in cursor.fetchall():
-            row_dict = dict(zip(columns, row))
-            res = Contrato.create(row_dict)
-            if res.is_ok:
-                contracts.append(res.value)
-            else:
-                print(f"⚠️ [E] Warning: Failed to parse contract row {row_dict.get('id_contrato')}: {res.error}")
-        
-        return Result.ok(contracts)
-        
-    except Exception as e:
-        return Result.err(f"Database error fetching contracts: {e}")
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-def T_build_empenho_transaction(contract: Contrato) -> Result[EmpenhoTransaction]:
-    """
-    [T]RANSFORM: Builds the EmpenhoTransaction from a Contract.
-    Uses the build_from_contract factory which hydrates internal entities.
-    """
-    # Wrap in Result because build_from_contract expects Result[Contrato]
-    return EmpenhoTransaction.build_from_contract(Result.ok(contract))
+from utils.etl_common import batch_load_contratos, batch_load_related_data
 
 def print_structure(obj, indent=0):
     """
@@ -78,8 +41,6 @@ def print_structure(obj, indent=0):
 
     # Handle Dataclasses and Objects with __dict__
     if hasattr(obj, "__dataclass_fields__") or hasattr(obj, "__dict__"):
-        name = obj.__class__.__name__
-        
         # Get attributes (unifying dataclass and standard class access)
         attrs = {}
         if hasattr(obj, "__dict__"):
@@ -123,37 +84,64 @@ def L_validate_and_log(idx: int, transaction: EmpenhoTransaction):
     else:
         print(f"   🚫 [L] Invalid #{idx}: {rules_res.error}")
 
-def run_pipeline():
-    print("🚀 Starting Functional ETL Pipeline (E -> T -> L)...\n")
+def run_pipeline(batch_size: int = 100):
+    print(f"🚀 Starting Functional ETL Pipeline (E -> T -> L) - Batch Size: {batch_size}...\n")
 
-    # 1. EXTRACT
-    print("--- [E]XTRACT Phase ---")
-    contracts_res = E_fetch_contracts(limit=10)
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    if contracts_res.is_err:
-        print(f"❌ Extraction Failed: {contracts_res.error}")
-        return
+    # Contar total
+    cursor.execute("SELECT COUNT(*) FROM contrato")
+    total_contratos = cursor.fetchone()[0]
+    print(f"Total contratos: {total_contratos}")
 
-    contracts = contracts_res.value
-    print(f"📦 Extracted {len(contracts)} contracts.\n")
+    offset = 0
+    total_processed = 0
+    batch_num = 0
 
-    # 2. TRANSFORM & LOAD
-    print("--- [T]RANSFORM & [L]OAD Phase ---")
-    
-    for i, contract in enumerate(contracts, 1):
-        print(f"\n🔄 Processing Item #{i} (Contract ID: {contract.id_contrato})...")
-
-        # Transform
-        empenho_res = T_build_empenho_transaction(contract)
-
-        if empenho_res.is_err:
-            print(f"   ⚠️ [T] Transformation Failed: {empenho_res.error}")
-            continue
+    while True:
+        batch_num += 1
+        # Extract
+        print(f"\n--- [E]XTRACT Batch {batch_num} ---")
+        contratos = batch_load_contratos(cursor, offset, batch_size)
+        if not contratos:
+            break
         
-        # Load / Validate
-        L_validate_and_log(i, empenho_res.value)
+        print(f"📦 Extracted {len(contratos)} contracts.")
 
+        # Load Related Data
+        (entidades, fornecedores, empenhos, _, _, _) = batch_load_related_data(cursor, contratos)
+
+        # Transform & Load
+        print(f"--- [T]RANSFORM & [L]OAD Batch {batch_num} ---")
+        
+        # Batch Transform
+        tx_results = EmpenhoTransaction.build_from_batch(
+            contratos, entidades, fornecedores, empenhos
+        )
+
+        for i, (contrato, emp_result) in enumerate(zip(contratos, tx_results), 1):
+             global_idx = offset + i
+             print(f"\n🔄 Processing Item #{global_idx} (Contract ID: {contrato.id_contrato})...")
+
+             if emp_result.is_err:
+                 print(f"   ⚠️ [T] Transformation Failed: {emp_result.error}")
+                 continue
+             
+             L_validate_and_log(global_idx, emp_result.value)
+
+        total_processed += len(contratos)
+        offset += batch_size
+        
+        # Optional: Ask user or just process all if it's a full run. 
+        # The prompt implies processing ALL so we continue.
+
+    cursor.close()
+    conn.close()
     print("\n🏁 Pipeline Completed.")
 
 if __name__ == "__main__":
-    run_pipeline()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--batch", "-b", type=int, default=100)
+    args = parser.parse_args()
+    run_pipeline(args.batch)

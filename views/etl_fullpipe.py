@@ -52,13 +52,13 @@ def log_contrato_estrutura(contrato: Contrato, entidade: Entidade = None,
     # Entidade
     if entidade:
         print(f"\n  🏛️  ENTIDADE:")
-        print(f"      Nome: {getattr(entidade, 'nome_entidade', 'N/A')}")
+        print(f"      Nome: {getattr(entidade, 'nome', 'N/A')}")
         print(f"      CNPJ: {getattr(entidade, 'cnpj', 'N/A')}")
     
     # Fornecedor
     if fornecedor:
         print(f"\n  🏢 FORNECEDOR:")
-        print(f"      Nome: {getattr(fornecedor, 'nome_fornecedor', 'N/A')}")
+        print(f"      Nome: {getattr(fornecedor, 'nome', 'N/A')}")
         print(f"      CNPJ: {getattr(fornecedor, 'cpf_cnpj', 'N/A')}")
     
     # Empenhos
