@@ -104,7 +104,6 @@ A abordagem se baseou na estruturação de um objeto Transaction que agrupa as e
 Sempre que um objeto composto por dependências é instanciado — como uma Transaction que agrega múltiplas entidades — é seguro assumir que todos os objetos envolvidos já passaram por seus contratos de validação.  (checar referencia 1)
 
 Dessa forma, a consistência do objeto agregado é garantida não só por suas regras, tanto quanto pelas regras internas e invariantes de cada componente que faz parte da agregação.
-```bash
 
 ### 3. Ciclo de Vida do Contrato (Transaction Lifecycle)
 
