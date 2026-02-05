@@ -244,7 +244,7 @@ Perguntas críticas que o sistema de validação responde para garantir a integr
 | `check_pagamento_date_after_contrato` | Data Pagamento ≥ Data Contrato | Temporal |
 | `check_pagamento_date_after_empenho` | Data Pagamento ≥ min(Data Empenho) | Temporal |
 
-### Suposições
+# Suposições
 insights pessoais:
 Não fica claro como os dados são registrados. Exemplo: todos os registros são feitos processualmente obdecendo ordem de procedencia através de um sistema automatizado? se um contrato não possui entidades do meio do ciclo de vida, ou apresenta inconsistencias nelas, vale a pena fazer validações subsequentes? ou já invalidar o contrato inteiro a partir dai? ou então invalidar em etapas mais sensiveis, como pagamentos?
 1. Contratos podem ser performados por muitos empenhos?
