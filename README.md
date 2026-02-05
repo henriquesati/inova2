@@ -2,17 +2,12 @@
 
 ## 🏗️ Execute Ubuntu (Setup)
 ```bash
-# 2. Crie o ambiente virtual
 python3 -m venv venv
-
-# 3. Ative o ambiente virtual
 source venv/bin/activate
-
-# 4. Atualize o pip (opcional, mas recomendado)
 pip install --upgrade pip
-
-# 5. Instale as dependências do projeto
 pip install -r requirements.txt
+
+.env com credenciais enviado no commit pra facilitar execução
 ```
 
 Ferramentas e utilitários para apoiar o desenvolvimento do projeto **Inova**.
